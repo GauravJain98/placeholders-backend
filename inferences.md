@@ -1,6 +1,10 @@
 # Conditional Inference
 
+Add Value as variable as 'var'
+
 ## Harsh Acceleration
+
+route: /acc/
 
 default: 11
 
@@ -10,6 +14,8 @@ msg : "Harsh Acceleration/Retardation"
 
 ## Overspeeding
 
+route: /speed/
+
 default: 110
 
 condition : speed>110
@@ -18,11 +24,15 @@ msg : "Speed over limit"
 
 ## Vehicle Engine
 
+route: /engine/vehicle/
+
 condition : ve>1.3 && ve<0.9
 
 msg: "Reduce and "
 
 ## Engine Load
+
+route: /engine/load/
 
 condition : el<20 && 50>el
 
@@ -31,6 +41,8 @@ msg: "Engine load inappropriate."
 map: "mechanic"
 
 ## Stopping
+
+route: /stopping/
 
 condition : time>12
 

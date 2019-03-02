@@ -8,9 +8,9 @@
         $(document).ready(function(){
             var socket = io.connect()
             console.log('connected')
-            socket.on('value', function(data){
+            socket.on('data', function(data){
                 // console.log(data.value)
-                document.getElementById("data").innerHTML = JSON.stringify(data.value, undefined, 2)
+                document.getElementById("data").innerHTML = JSON.stringify(data.msg, undefined, 2)
             })
             console.log(socket)
         })
