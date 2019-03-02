@@ -3,7 +3,7 @@ monkey.patch_all()
 from time import sleep
 import sqlite3
 from random import random
-from flask import Flask, render_template, copy_current_request_context, g, request, jsonify
+from flask import Flask, render_template, copy_current_request_context, g, request, jsonify,redirect
 from flask_socketio import SocketIO, emit
 
 # ROUTING OF SERVER
@@ -18,6 +18,10 @@ app.config['DEBUG'] = True
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/simulation/')
+def simulation():
+    return render_template('sim.html')
 
 @app.route('/test')
 def test():
@@ -54,10 +58,10 @@ def acc():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Harsh Acceleration"})
-            return jsonify({"success":True})
+            return render_template('sim.html')
         elif -1 * var > limit:
             socketio.emit('data', {"msg":"Harsh Brakeing"})
-            return jsonify({"success":True})
+            return render_template('sim.html')
         else:
             return jsonify({"msg":"Harsh Retardation"})
     else:
@@ -70,7 +74,7 @@ def speed():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Harsh Speeding"})
-            return jsonify({"success":True})
+            return render_template('sim.html')
         else:
             return jsonify({'err':'var in limit'})
     else:
@@ -84,7 +88,7 @@ def engineLoad():
         var = int(request.args['var'])
         if var < low or var >= high:
             socketio.emit('data', {"msg":"Engine load inappropriate.","map":"mechanic"})
-            return jsonify({"success":True})
+            return render_template('sim.html')
         else:
             return jsonify({'err':'var in limit'})            
     else:
@@ -98,7 +102,7 @@ def engineVehicle():
         var = int(request.args['var'])
         if var <= low:
             socketio.emit('data', {"msg":"Slow down."})
-            return jsonify({"success":True})
+            return render_template('sim.html')
         elif var > high:
             return jsonify({"msg":"Speed Up"})
     else:
@@ -111,7 +115,7 @@ def stopping():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Turn off engine."})
-            return jsonify({"success":True})
+            return render_template('sim.html')
         else:
             return jsonify({'err':'var in limit'})
     else:
@@ -122,17 +126,17 @@ def stopping():
 @app.route('/coolant/')
 def coolant():
     socketio.emit('data', {"msg":"Engine Coolant Circuit Error.","map":"mechanic"})
-    return jsonify({"success":True})
+    return redirect('/simulation/')
 
 @app.route('/misfire/')
 def misfire():
     socketio.emit('data', {"msg":"Engine might have an issue.","map":"mechanic"})
-    return jsonify({"success":True})
+    return redirect('/simulation/')
 
 @app.route('/ocircuit/')
 def ocircuit():
     socketio.emit('data', {"msg":"Error with O2 circuit","map":"mechanic"})
-    return jsonify({"success":True})
+    return redirect('/simulation/')
 
 
 # DATABASE CONNECTION
@@ -159,4 +163,4 @@ def query_db(query, args=(), one=False):
 # MAIN RUNNER
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, "0.0.0.0")
