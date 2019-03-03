@@ -58,10 +58,10 @@ def acc():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Harsh Acceleration"})
-            return render_template('sim.html')
+            return redirect('/simulation/')
         elif -1 * var > limit:
             socketio.emit('data', {"msg":"Harsh Brakeing"})
-            return render_template('sim.html')
+            return redirect('/simulation/')
         else:
             return jsonify({"msg":"Harsh Retardation"})
     else:
@@ -74,7 +74,7 @@ def speed():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Harsh Speeding"})
-            return render_template('sim.html')
+            return redirect('/simulation/')
         else:
             return jsonify({'err':'var in limit'})
     else:
@@ -88,7 +88,7 @@ def engineLoad():
         var = int(request.args['var'])
         if var < low or var >= high:
             socketio.emit('data', {"msg":"Engine load inappropriate.","map":"mechanic"})
-            return render_template('sim.html')
+            return redirect('/simulation/')
         else:
             return jsonify({'err':'var in limit'})            
     else:
@@ -102,11 +102,28 @@ def engineVehicle():
         var = int(request.args['var'])
         if var <= low:
             socketio.emit('data', {"msg":"Slow down."})
-            return render_template('sim.html')
+            return redirect('/simulation/')
         elif var > high:
-            return jsonify({"msg":"Speed Up"})
+            socketio.emit('data', {"msg":"Speed Up"})
+            return redirect('/simulation/')
     else:
         return jsonify({'err':'var not in scope'})
+
+@app.route('/gear/')
+def gear():
+    change = "Change to gear {}."
+    if 'speed' in request.args and 'gear' in request.args:
+        speed = int(request.args['speed'])
+        gear = int(request.args['gear'])
+        if  speed <= 10:
+            if gear != 1:
+                socketio.emit('data', {"msg":change.format(1)})
+            return redirect('/simulation/')
+        else:
+            idealGear = (speed-10)//10
+            if gear != idealGear:
+                socketio.emit('data',{'msg':change.format(idealGear)})
+            return redirect('/simulation/')
 
 @app.route('/stopping/')
 def stopping():
@@ -115,7 +132,7 @@ def stopping():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Turn off engine."})
-            return render_template('sim.html')
+            return redirect('/simulation/')
         else:
             return jsonify({'err':'var in limit'})
     else:
@@ -136,6 +153,11 @@ def misfire():
 @app.route('/ocircuit/')
 def ocircuit():
     socketio.emit('data', {"msg":"Error with O2 circuit","map":"mechanic"})
+    return redirect('/simulation/')
+
+@app.route('/fuel/')
+def fuel():
+    socketio.emit('data', {"msg":"Fuel is low","map":"mechanic"})
     return redirect('/simulation/')
 
 
@@ -164,3 +186,6 @@ def query_db(query, args=(), one=False):
 
 if __name__ == '__main__':
     socketio.run(app, "0.0.0.0")
+
+
+# Fuel And Gear
