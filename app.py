@@ -13,6 +13,34 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 app.config['DEBUG'] = True
 
+PERSON = '"C"'
+
+def scoreUpdate(person,value):
+    score = query_db('select Marks from Driver where PersonID={};'.format(person))[0][0]
+    score = (score - value)%100
+    query = "update Driver SET Marks="+str(score)+" where PersonID='C';"
+    query_db(query)
+
+# DATABASE CONNECTION
+
+# DEFINITIONS
+
+DATABASE = './database.db'
+
+# FUNCTIONS
+
+def args_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
+
+def query_db(query, args=(), one=False):
+    cur = args_db().execute(query, args)
+    rv = cur.fetchall()
+    args_db().commit()
+    cur.close()
+    return (rv[0] if rv else None) if one else rv
 
 # ROUTES
 @app.route('/')
@@ -58,11 +86,14 @@ def acc():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Harsh Acceleration"})
-            return render_template('sim.html')
+            scoreUpdate(PERSON,.5)
+            return redirect('/simulation/')
         elif -1 * var > limit:
             socketio.emit('data', {"msg":"Harsh Brakeing"})
-            return render_template('sim.html')
+            scoreUpdate(PERSON,.5)
+            return redirect('/simulation/')
         else:
+            scoreUpdate(PERSON,-.005)
             return jsonify({"msg":"Harsh Retardation"})
     else:
         return jsonify({'err':'var not in provided'})
@@ -74,7 +105,8 @@ def speed():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Harsh Speeding"})
-            return render_template('sim.html')
+            scoreUpdate(PERSON,.5)
+            return redirect('/simulation/')
         else:
             return jsonify({'err':'var in limit'})
     else:
@@ -88,7 +120,7 @@ def engineLoad():
         var = int(request.args['var'])
         if var < low or var >= high:
             socketio.emit('data', {"msg":"Engine load inappropriate.","map":"mechanic"})
-            return render_template('sim.html')
+            return redirect('/simulation/')
         else:
             return jsonify({'err':'var in limit'})            
     else:
@@ -102,7 +134,8 @@ def engineVehicle():
         var = int(request.args['var'])
         if var <= low:
             socketio.emit('data', {"msg":"Slow down."})
-            return render_template('sim.html')
+            scoreUpdate(PERSON,.5)
+            return redirect('/simulation/')
         elif var > high:
             return jsonify({"msg":"Speed Up"})
     else:
@@ -115,7 +148,8 @@ def stopping():
         var = int(request.args['var'])
         if var > limit:
             socketio.emit('data', {"msg":"Turn off engine."})
-            return render_template('sim.html')
+            scoreUpdate(PERSON,.5)
+            return redirect('/simulation/')
         else:
             return jsonify({'err':'var in limit'})
     else:
@@ -138,29 +172,8 @@ def ocircuit():
     socketio.emit('data', {"msg":"Error with O2 circuit","map":"mechanic"})
     return redirect('/simulation/')
 
-
-# DATABASE CONNECTION
-
-# DEFINITIONS
-
-DATABASE = './database.db'
-
-# FUNCTIONS
-
-def args_db():
-    db = argsattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-    return db
-
-def query_db(query, args=(), one=False):
-    cur = args_db().execute(query, args)
-    rv = cur.fetchall()
-    cur.close()
-    return (rv[0] if rv else None) if one else rv
-
-
 # MAIN RUNNER
 
 if __name__ == '__main__':
-    socketio.run(app, "0.0.0.0")
+    socketio.run(app, host="0.0.0.0",port=9000)
+
